@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kiosk</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .menu-item { margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>Menu</h1>
+    <div id="menu"></div>
+    <button onclick="placeOrder()">Place Order</button>
+    <div id="total"></div>
+
+    <script>
+        const menuItems = {{ menu|tojson }};
+        
+        function displayMenu() {
+            const menuDiv = document.getElementById('menu');
+            menuItems.forEach(item => {
+                menuDiv.innerHTML += `<div class="menu-item">
+                    <input type="checkbox" value='{"item": "${item.item}", "price": ${item.price}}'> ${item.item}: $${item.price}
+                </div>`;
+            });
+        }
+
+        function placeOrder() {
+            const selectedItems = Array.from(document.querySelectorAll('input[type="checkbox"]:checked')).map(input => JSON.parse(input.value));
+            fetch('/order', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ items: selectedItems })
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('total').innerText = `Total: $${data.total.toFixed(2)}`;
+            });
+        }
+
+        displayMenu();
+    </script>
+</body>
+</html>
