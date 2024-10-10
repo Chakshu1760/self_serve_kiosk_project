@@ -5,30 +5,115 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kiosk</title>
     <style>
-        body { font-family: Arial, sans-serif; }
-        .menu-item { margin: 10px 0; }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: #333;
+        }
+
+        #menu {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 900px;
+        }
+
+        .menu-item {
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin: 10px;
+            width: 200px;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .menu-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        .menu-item input {
+            display: none;
+        }
+
+        .menu-item.selected {
+            border: 3px solid #28a745;
+        }
+
+        button {
+            background-color: #28a745;
+            color: white;
+            font-size: 1.5rem;
+            padding: 15px 30px;
+            margin-top: 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: #218838;
+        }
+
+        #total {
+            margin-top: 20px;
+            font-size: 1.5rem;
+        }
     </style>
 </head>
 <body>
-    <h1>Menu</h1>
+    <h1>Self-Service Kiosk</h1>
     <div id="menu"></div>
     <button onclick="placeOrder()">Place Order</button>
-    <div id="total"></div>
+    <div id="total">Total: $0.00</div>
 
     <script>
         const menuItems = {{ menu|tojson }};
-        
+        let total = 0;
+
         function displayMenu() {
             const menuDiv = document.getElementById('menu');
-            menuItems.forEach(item => {
-                menuDiv.innerHTML += `<div class="menu-item">
-                    <input type="checkbox" value='{"item": "${item.item}", "price": ${item.price}}'> ${item.item}: $${item.price}
-                </div>`;
+            menuItems.forEach((item, index) => {
+                const menuItemDiv = document.createElement('div');
+                menuItemDiv.classList.add('menu-item');
+                menuItemDiv.innerHTML = `
+                    <input type="checkbox" id="item-${index}" value='{"item": "${item.item}", "price": ${item.price}}'>
+                    <label for="item-${index}">
+                        <h3>${item.item}</h3>
+                        <p>$${item.price.toFixed(2)}</p>
+                    </label>
+                `;
+                menuItemDiv.addEventListener('click', () => toggleItem(menuItemDiv, item.price));
+                menuDiv.appendChild(menuItemDiv);
             });
         }
 
+        function toggleItem(menuItemDiv, price) {
+            if (menuItemDiv.classList.contains('selected')) {
+                menuItemDiv.classList.remove('selected');
+                total -= price;
+            } else {
+                menuItemDiv.classList.add('selected');
+                total += price;
+            }
+            document.getElementById('total').innerText = `Total: $${total.toFixed(2)}`;
+        }
+
         function placeOrder() {
-            const selectedItems = Array.from(document.querySelectorAll('input[type="checkbox"]:checked')).map(input => JSON.parse(input.value));
+            const selectedItems = Array.from(document.querySelectorAll('.menu-item.selected input')).map(input => JSON.parse(input.value));
             fetch('/order', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
