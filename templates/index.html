@@ -3,28 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kiosk</title>
+    <title>Welcome to Chick-fil-A</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             background-color: #f8f9fa;
             margin: 0;
-            padding: 20px;
+            padding: 0;
             display: flex;
-            flex-direction: column;
-            align-items: center;
+            flex-direction: row; /* Use row layout for sidebar and main content */
+            height: 100vh; /* Full height for the portrait view */
         }
 
         h1 {
             font-size: 2.5rem;
             color: #333;
+            text-align: center; /* Center align the title */
+            width: 100%; /* Full width for title */
+            margin: 20px 0;
+        }
+
+        #sidebar {
+            width: 200px; /* Sidebar width */
+            background-color: #343a40; /* Dark background */
+            color: white; /* White text */
+            padding: 20px;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column; /* Align items vertically */
+        }
+
+        #sidebar h2 {
+            color: #f8f9fa; /* Light color for sidebar title */
+        }
+
+        #sidebar button {
+            background: none;
+            color: white;
+            border: none;
+            padding: 10px 0;
+            cursor: pointer;
+            text-align: left; /* Left align text in sidebar */
+            transition: background-color 0.2s;
+        }
+
+        #sidebar button:hover {
+            background-color: rgba(255, 255, 255, 0.1); /* Hover effect */
         }
 
         #menu {
+            flex-grow: 1; /* Allow menu to take the remaining space */
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
-            max-width: 900px;
+            align-items: flex-start; /* Align items at the start */
+            padding: 20px;
+            overflow-y: auto; /* Scrollable menu if necessary */
         }
 
         .menu-item {
@@ -33,7 +67,7 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             padding: 20px;
             margin: 10px;
-            width: 200px;
+            width: 150px; /* Reduced width for portrait view */
             text-align: center;
             cursor: pointer;
             transition: transform 0.2s, box-shadow 0.2s;
@@ -75,18 +109,30 @@
     </style>
 </head>
 <body>
-    <h1>Self-Service Kiosk</h1>
-    <div id="menu"></div>
-    <button onclick="placeOrder()">Place Order</button>
-    <div id="total">Total: $0.00</div>
+    <div id="sidebar">
+        <h2>Menu Categories</h2>
+        <button onclick="filterMenu('Fried')">Chicken (Fried)</button>
+        <button onclick="filterMenu('Grilled')">Chicken (Grilled)</button>
+        <button onclick="filterMenu('Sides')">Sides</button>
+        <button onclick="filterMenu('Beverages')">Beverages</button>
+        <button onclick="filterMenu('Salads')">Salads</button>
+    </div>
+
+    <div>
+        <h1>Welcome to Chick-fil-A</h1>
+        <div id="menu"></div>
+        <button onclick="placeOrder()">Place Order</button>
+        <div id="total">Total: $0.00</div>
+    </div>
 
     <script>
         const menuItems = {{ menu|tojson }};
         let total = 0;
 
-        function displayMenu() {
+        function displayMenu(filteredItems = menuItems) {
             const menuDiv = document.getElementById('menu');
-            menuItems.forEach((item, index) => {
+            menuDiv.innerHTML = ''; // Clear previous menu items
+            filteredItems.forEach((item, index) => {
                 const menuItemDiv = document.createElement('div');
                 menuItemDiv.classList.add('menu-item');
                 menuItemDiv.innerHTML = `
@@ -125,6 +171,12 @@
             });
         }
 
+        function filterMenu(category) {
+            const filteredItems = menuItems.filter(item => item.combo === (category === 'Fried' || category === 'Grilled' ? 1 : 0));
+            displayMenu(filteredItems);
+        }
+
+        // Initially display all menu items
         displayMenu();
     </script>
 </body>
