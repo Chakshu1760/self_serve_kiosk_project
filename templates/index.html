@@ -4,7 +4,58 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Welcome to Chick-fil-A</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            height: 100vh;
+            margin: 0;
+            background-color: #f7f7f7;
+        }
+        #sidebar {
+            width: 200px;
+            background-color: #eee;
+            padding: 20px;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+        }
+        #main {
+            flex-grow: 1;
+            padding: 20px;
+        }
+        .menu-item {
+            margin: 10px 0;
+        }
+        .category-button {
+            display: block;
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            text-align: center;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .category-button:hover {
+            background-color: #0056b3;
+        }
+        .item-button {
+            width: 100%; /* Make buttons full width */
+            padding: 10px;
+            background-color: #28a745; /* Green color */
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-align: left; /* Align text to the left */
+        }
+        .item-button:hover {
+            background-color: #218838; /* Darker green on hover */
+        }
+        #total {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+    </style>
 </head>
 <body>
     <div id="sidebar">
@@ -18,10 +69,46 @@
     <div id="main">
         <h1>Hi, how are you? What would you like to order?</h1>
         <div id="menu"></div>
-        <button class="item-button" onclick="placeOrder()">Place Order</button>
+        <button onclick="placeOrder()" style="background-color: #28a745; color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer;">Place Order</button>
         <div id="total"></div>
     </div>
 
-    <script src="{{ url_for('static', filename='scripts.js') }}"></script>
+    <script>
+        const menuItems = {{ menu | tojson | safe }};
+
+        function showItems(category) {
+            console.log(`Showing items for category: ${category}`); // Debugging line
+            const filteredItems = menuItems.filter(item => item.category === category);
+            const menuDiv = document.getElementById('menu');
+            menuDiv.innerHTML = ''; // Clear previous items
+
+            filteredItems.forEach(item => {
+                menuDiv.innerHTML += `<div class="menu-item">
+                    <button class="item-button" onclick="addToOrder('${item.item}', ${item.price})">
+                        ${item.item}: $${item.price}
+                    </button>
+                </div>`;
+            });
+        }
+
+        const selectedOrderItems = [];
+
+        function addToOrder(item, price) {
+            selectedOrderItems.push({ item, price });
+            console.log(`Added to order: ${item}, Total items in order: ${selectedOrderItems.length}`);
+        }
+
+        function placeOrder() {
+            fetch('/order', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ items: selectedOrderItems })
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('total').innerText = `Total: $${data.total.toFixed(2)}`;
+            });
+        }
+    </script>
 </body>
 </html>
