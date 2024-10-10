@@ -4,180 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Welcome to Chick-fil-A</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f8f9fa;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: row; /* Use row layout for sidebar and main content */
-            height: 100vh; /* Full height for the portrait view */
-        }
-
-        h1 {
-            font-size: 2.5rem;
-            color: #333;
-            text-align: center; /* Center align the title */
-            width: 100%; /* Full width for title */
-            margin: 20px 0;
-        }
-
-        #sidebar {
-            width: 200px; /* Sidebar width */
-            background-color: #343a40; /* Dark background */
-            color: white; /* White text */
-            padding: 20px;
-            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-            display: flex;
-            flex-direction: column; /* Align items vertically */
-        }
-
-        #sidebar h2 {
-            color: #f8f9fa; /* Light color for sidebar title */
-        }
-
-        #sidebar button {
-            background: none;
-            color: white;
-            border: none;
-            padding: 10px 0;
-            cursor: pointer;
-            text-align: left; /* Left align text in sidebar */
-            transition: background-color 0.2s;
-        }
-
-        #sidebar button:hover {
-            background-color: rgba(255, 255, 255, 0.1); /* Hover effect */
-        }
-
-        #menu {
-            flex-grow: 1; /* Allow menu to take the remaining space */
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            align-items: flex-start; /* Align items at the start */
-            padding: 20px;
-            overflow-y: auto; /* Scrollable menu if necessary */
-        }
-
-        .menu-item {
-            background-color: #fff;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            padding: 20px;
-            margin: 10px;
-            width: 150px; /* Reduced width for portrait view */
-            text-align: center;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        .menu-item:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-        }
-
-        .menu-item input {
-            display: none;
-        }
-
-        .menu-item.selected {
-            border: 3px solid #28a745;
-        }
-
-        button {
-            background-color: #28a745;
-            color: white;
-            font-size: 1.5rem;
-            padding: 15px 30px;
-            margin-top: 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-
-        button:hover {
-            background-color: #218838;
-        }
-
-        #total {
-            margin-top: 20px;
-            font-size: 1.5rem;
-        }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
     <div id="sidebar">
-        <h2>Menu Categories</h2>
-        <button onclick="filterMenu('Fried')">Chicken (Fried)</button>
-        <button onclick="filterMenu('Grilled')">Chicken (Grilled)</button>
-        <button onclick="filterMenu('Sides')">Sides</button>
-        <button onclick="filterMenu('Beverages')">Beverages</button>
-        <button onclick="filterMenu('Salads')">Salads</button>
+        <h3>Select Category</h3>
+        <div class="category-button" onclick="showItems('Fried')">Chicken (Fried)</div>
+        <div class="category-button" onclick="showItems('Grilled')">Chicken (Grilled)</div>
+        <div class="category-button" onclick="showItems('Sides')">Sides</div>
+        <div class="category-button" onclick="showItems('Beverages')">Beverages</div>
+        <div class="category-button" onclick="showItems('Salads')">Salads</div>
     </div>
-
-    <div>
-        <h1>Welcome to Chick-fil-A</h1>
+    <div id="main">
+        <h1>Hi, how are you? What would you like to order?</h1>
         <div id="menu"></div>
-        <button onclick="placeOrder()">Place Order</button>
-        <div id="total">Total: $0.00</div>
+        <button class="item-button" onclick="placeOrder()">Place Order</button>
+        <div id="total"></div>
     </div>
 
-    <script>
-        const menuItems = {{ menu|tojson }};
-        let total = 0;
-
-        function displayMenu(filteredItems = menuItems) {
-            const menuDiv = document.getElementById('menu');
-            menuDiv.innerHTML = ''; // Clear previous menu items
-            filteredItems.forEach((item, index) => {
-                const menuItemDiv = document.createElement('div');
-                menuItemDiv.classList.add('menu-item');
-                menuItemDiv.innerHTML = `
-                    <input type="checkbox" id="item-${index}" value='{"item": "${item.item}", "price": ${item.price}}'>
-                    <label for="item-${index}">
-                        <h3>${item.item}</h3>
-                        <p>$${item.price.toFixed(2)}</p>
-                    </label>
-                `;
-                menuItemDiv.addEventListener('click', () => toggleItem(menuItemDiv, item.price));
-                menuDiv.appendChild(menuItemDiv);
-            });
-        }
-
-        function toggleItem(menuItemDiv, price) {
-            if (menuItemDiv.classList.contains('selected')) {
-                menuItemDiv.classList.remove('selected');
-                total -= price;
-            } else {
-                menuItemDiv.classList.add('selected');
-                total += price;
-            }
-            document.getElementById('total').innerText = `Total: $${total.toFixed(2)}`;
-        }
-
-        function placeOrder() {
-            const selectedItems = Array.from(document.querySelectorAll('.menu-item.selected input')).map(input => JSON.parse(input.value));
-            fetch('/order', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ items: selectedItems })
-            })
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('total').innerText = `Total: $${data.total.toFixed(2)}`;
-            });
-        }
-
-        function filterMenu(category) {
-            const filteredItems = menuItems.filter(item => item.combo === (category === 'Fried' || category === 'Grilled' ? 1 : 0));
-            displayMenu(filteredItems);
-        }
-
-        // Initially display all menu items
-        displayMenu();
-    </script>
+    <script src="{{ url_for('static', filename='scripts.js') }}"></script>
 </body>
 </html>

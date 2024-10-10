@@ -6,10 +6,11 @@ app = Flask(__name__)
 def get_menu():
     conn = sqlite3.connect('kiosk.db')
     cursor = conn.cursor()
-    cursor.execute('SELECT * FROM menu')
+    cursor.execute('SELECT item, price, category FROM menu')
     menu = cursor.fetchall()
     conn.close()
-    return [{'item': item[1], 'price': item[2]} for item in menu]
+    return [{'item': item[0], 'price': item[1], 'category': item[2]} for item in menu]
+
 
 @app.route('/')
 def index():
