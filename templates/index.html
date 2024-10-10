@@ -7,24 +7,65 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            display: flex;
-            height: 100vh;
+            background-color: #f8f9fa;
             margin: 0;
-            background-color: #f7f7f7;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
+        
+        h1 {
+            font-size: 2.5rem;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
         #sidebar {
             width: 200px;
             background-color: #eee;
             padding: 20px;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100vh;
         }
+
         #main {
             flex-grow: 1;
             padding: 20px;
+            margin-left: 220px; /* Adjusted to make room for sidebar */
         }
+
+        #menu {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 900px;
+        }
+
         .menu-item {
-            margin: 10px 0;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin: 10px;
+            width: 200px;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
         }
+
+        .menu-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        .menu-item.selected {
+            border: 3px solid #28a745;
+        }
+
         .category-button {
             display: block;
             margin: 10px 0;
@@ -34,26 +75,32 @@
             text-align: center;
             border-radius: 5px;
             cursor: pointer;
+            transition: background-color 0.2s;
         }
+
         .category-button:hover {
             background-color: #0056b3;
         }
-        .item-button {
-            width: 100%; /* Make buttons full width */
-            padding: 10px;
-            background-color: #28a745; /* Green color */
+
+        button {
+            background-color: #28a745;
             color: white;
+            font-size: 1.5rem;
+            padding: 15px 30px;
+            margin-top: 20px;
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            text-align: left; /* Align text to the left */
+            transition: background-color 0.2s;
         }
-        .item-button:hover {
-            background-color: #218838; /* Darker green on hover */
+
+        button:hover {
+            background-color: #218838;
         }
+
         #total {
             margin-top: 20px;
-            font-weight: bold;
+            font-size: 1.5rem;
         }
     </style>
 </head>
@@ -69,12 +116,13 @@
     <div id="main">
         <h1>Hi, how are you? What would you like to order?</h1>
         <div id="menu"></div>
-        <button onclick="placeOrder()" style="background-color: #28a745; color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer;">Place Order</button>
-        <div id="total"></div>
+        <button onclick="placeOrder()">Place Order</button>
+        <div id="total">Total: $0.00</div>
     </div>
 
     <script>
-        const menuItems = {{ menu | tojson | safe }};
+        const menuItems = {{ menu | tojson }};
+        let total = 0;
 
         function showItems(category) {
             console.log(`Showing items for category: ${category}`); // Debugging line
@@ -82,27 +130,40 @@
             const menuDiv = document.getElementById('menu');
             menuDiv.innerHTML = ''; // Clear previous items
 
-            filteredItems.forEach(item => {
-                menuDiv.innerHTML += `<div class="menu-item">
-                    <button class="item-button" onclick="addToOrder('${item.item}', ${item.price})">
-                        ${item.item}: $${item.price}
-                    </button>
-                </div>`;
+            filteredItems.forEach((item) => {
+                const menuItemDiv = document.createElement('div');
+                menuItemDiv.classList.add('menu-item');
+                menuItemDiv.innerHTML = `
+                    <h3>${item.item}</h3>
+                    <p>$${item.price.toFixed(2)}</p>
+                `;
+                menuItemDiv.addEventListener('click', () => toggleItem(menuItemDiv, item.price));
+                menuDiv.appendChild(menuItemDiv);
             });
         }
 
-        const selectedOrderItems = [];
-
-        function addToOrder(item, price) {
-            selectedOrderItems.push({ item, price });
-            console.log(`Added to order: ${item}, Total items in order: ${selectedOrderItems.length}`);
+        function toggleItem(menuItemDiv, price) {
+            if (menuItemDiv.classList.contains('selected')) {
+                menuItemDiv.classList.remove('selected');
+                total -= price;
+            } else {
+                menuItemDiv.classList.add('selected');
+                total += price;
+            }
+            document.getElementById('total').innerText = `Total: $${total.toFixed(2)}`;
         }
 
         function placeOrder() {
+            const selectedItems = Array.from(document.querySelectorAll('.menu-item.selected')).map(itemDiv => {
+                const itemName = itemDiv.querySelector('h3').innerText;
+                const itemPrice = itemDiv.querySelector('p').innerText.replace('$', '');
+                return { item: itemName, price: parseFloat(itemPrice) };
+            });
+
             fetch('/order', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ items: selectedOrderItems })
+                body: JSON.stringify({ items: selectedItems })
             })
             .then(response => response.json())
             .then(data => {
